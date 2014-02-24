@@ -1,0 +1,10 @@
+{
+    "appName": {
+        "message": "privado1",
+        "description": "The name of the application"
+    },
+    "appDescription": {
+        "message": "Minimum VIable Product",
+        "description": "The description of the application"
+    }
+}

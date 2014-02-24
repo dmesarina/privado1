@@ -1,0 +1,9 @@
+{
+  "name": "privado1",
+  "private": true,
+  "dependencies": {
+    "chai": "~1.9.0",
+    "mocha": "~1.17.1"
+  },
+  "devDependencies": {}
+}
