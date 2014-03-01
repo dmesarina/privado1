@@ -334,4 +334,120 @@ describe('MemoryManager', function () {
             expect(mm.readInt(address)).to.equal(n2);
         });
     });
+    
+    describe('on requesting real size', function () {
+        var mm;
+        
+        beforeEach(function () {
+            mm = new MemoryManager();
+        });
+        
+        it('should report a size of zero when nothing has been written to the map', function () {
+            expect(mm.realSize()).to.equal(0);
+        });
+        
+        it('should report a size equal to the default page size when a single page has been written to and the map has been constructed with no arguments', function () {
+            mm.writeByte(0, 1);
+            expect(mm.realSize()).to.equal(armsym.DEFAULT_PAGE_SIZE);
+        });
+        
+        it('should report a size equal to the page size the map was constructed with after writing to a single page', function () {
+            mm = new MemoryManager(512);
+            mm.writeByte(0, 1);
+            expect(mm.realSize()).to.equal(512);
+        });
+        
+        it('should report the same size when more than one value has been written to the same page', function () {
+            var realSize;
+            mm.writeByte(0, 1);
+            realSize = mm.realSize();
+            mm.writeByte(8, 1);
+            expect(mm.realSize()).to.equal(realSize);
+        });
+        
+        it('should report a size equal to the page size times the number of pages written to', function () {
+            mm.writeByte(0, 1);
+            mm.writeByte(armsym.DEFAULT_PAGE_SIZE, 1);
+            expect(mm.realSize()).to.equal(2 * armsym.DEFAULT_PAGE_SIZE);
+        });
+    });
+    
+    describe('on requesting virtual size', function () {
+        var mm;
+        
+        beforeEach(function () {
+            mm = new MemoryManager();
+        });
+        
+        it('should report a size of zero when nothing has been written to the map', function () {
+            expect(mm.virtualSize()).to.equal(0);
+        });
+        
+        it('should report a size equal to the default page size when a single page has been written to and the map has been constructed with no arguments', function () {
+            mm.writeByte(0, 1);
+            expect(mm.virtualSize()).to.equal(armsym.DEFAULT_PAGE_SIZE);
+        });
+        
+        it('should report a size equal to the page size the map was constructed with after writing to a single page', function () {
+            mm = new MemoryManager(512);
+            mm.writeByte(0, 1);
+            expect(mm.virtualSize()).to.equal(512);
+        });
+        
+        it('should report the same size when more than one value has been written to the same page', function () {
+            var size;
+            mm.writeByte(0, 1);
+            size = mm.virtualSize();
+            mm.writeByte(8, 1);
+            expect(mm.virtualSize()).to.equal(size);
+        });
+        
+        it('should report a size equal to the page size times the number of pages from page zero plus one', function () {
+            mm.writeByte(armsym.DEFAULT_PAGE_SIZE * 5, 1);
+            expect(mm.virtualSize()).to.equal(6 * armsym.DEFAULT_PAGE_SIZE);
+        });
+    });
+    
+    describe('on calling clear clear', function () {
+        var mm;
+        
+        beforeEach(function () {
+            mm = new MemoryManager();
+        });
+        
+        it('should keep a real size of zero when operating on an unmodified map', function () {
+            mm.clear();
+            expect(mm.realSize()).to.equal(0);
+        });
+        
+        it('should keep a virtual size of zero when operating on an unmodified map', function () {
+            mm.clear();
+            expect(mm.virtualSize()).to.equal(0);
+        });
+        
+        it('should keep the same real size as before executing', function () {
+            var size;
+            mm.writeByte(0, 1);
+            size = mm.realSize();
+            mm.clear();
+            expect(mm.realSize()).to.equal(size);
+        });
+        
+        it('should keep the same virtual size as before executing', function () {
+            var size;
+            mm.writeByte(0, 1);
+            size = mm.virtualSize();
+            mm.clear();
+            expect(mm.virtualSize()).to.equal(size);
+        });
+        
+        it('should reset all values to zero', function () {
+            var a1 = random(0, 10) * 0x8, a2 = random(0, 10) * 0x8;
+            mm.writeByte(a1, 45);
+            mm.writeByte(a2, 90);
+            mm.clear();
+            expect(mm.readByte(a1)).to.equal(0);
+            expect(mm.readByte(a2)).to.equal(0);
+        });
+    });
 });

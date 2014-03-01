@@ -14,8 +14,14 @@
         BOUNDARY_16 = 0x10,
         BOUNDARY_32 = 0x20;
     
+    function extractMapIndexes(memoryMap) {
+        return Object.keys(memoryMap).map(function (e) {
+            return parseInt(e, 10);
+        }).sort();
+    }
+    
     function findClosestIndex(index, pageSize, memoryMap) {
-        var keys = Object.keys(memoryMap).sort(),
+        var keys = extractMapIndexes(memoryMap),
             closest = keys.reduce(function (previous, current) {
                 return current > index ? previous : current;
             }, 0);
@@ -98,11 +104,18 @@
         };
         
         this.realSize = function () {
-            return 0;
+            return Object.keys(memoryMap).length * pageSize;
         };
         
         this.virtualSize = function () {
-            return 0;
+            var arr = extractMapIndexes(memoryMap).slice(-1);
+            return arr.length > 0 ? arr[0] + pageSize : 0;
+        };
+        
+        this.clear = function () {
+            Object.keys(memoryMap).forEach(function (k) {
+                memoryMap[k] = new DataView(new ArrayBuffer(pageSize));
+            });
         };
         
         this.readBit = function (offset) {
