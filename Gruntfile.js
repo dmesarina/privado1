@@ -220,7 +220,8 @@ module.exports = function (grunt) {
                 'compass:dist',
                 'imagemin',
                 'svgmin',
-                'htmlmin'
+                'htmlmin',
+                'peg:parser'
             ]
         },
         chromeManifest: {
@@ -249,6 +250,18 @@ module.exports = function (grunt) {
                     src: ['**'],
                     dest: ''
                 }]
+            }
+        },
+        peg: {
+            options: {
+                trackLineAndColumn: true
+            },
+            parser: {
+                src: '<%= yeoman.app %>/scripts/grammar/armv6m.peg',
+                dest: '<%= yeoman.app %>/scripts/grammar/armv6m.js',
+                options: {
+                    exportVar: 'armv6m.parser'
+                }
             }
         }
     });

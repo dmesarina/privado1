@@ -6,3 +6,5 @@ temp
 dist
 .sass-cache
 app/bower_components
+package
+app/scripts/grammar/*.js
