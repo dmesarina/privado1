@@ -260,7 +260,7 @@ module.exports = function (grunt) {
                 src: '<%= yeoman.app %>/scripts/grammar/armv6m.peg',
                 dest: '<%= yeoman.app %>/scripts/grammar/armv6m.js',
                 options: {
-                    exportVar: 'armv6m.parser'
+                    exportVar: 'window.armv6m'
                 }
             }
         }
@@ -281,6 +281,7 @@ module.exports = function (grunt) {
     });
 
     grunt.registerTask('test', [
+        'peg:parser',
         'connect:test',
         'mocha'
     ]);
