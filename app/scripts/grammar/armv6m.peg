@@ -50,1006 +50,121 @@ __
 /*------------------INSTRUCTIONS------------------*/
 Program
   = elements:SourceElements? {
-      return {
-        elements: elements !== null ? elements : []
-      };
+	  var element=elements;
+	  return element;
     }
 
 SourceElements
   = head:SourceElement tail:(__ SourceElement)* {
-      var result = [head];
+      var result = {};
+	  result[head.line]=head;
       for (var i = 0; i < tail.length; i++) {
-        result.push(tail[i][1]);
+        result[tail[i][1].line]=tail[i][1]; 
       }
-      return {Statements:result , metadata:createMetadata(line,column)};
+      return result;
     }
 
 /*Statement
  */
 SourceElement
-  = Statement
+  =Statement 
   
 Statement "instruction"
  =SASMC //Shift, Subtract, Move, Compare
-  /DP  //Data Processing
-  /SDIBE //Special Data Instrucctions, Branch and Exchange
-  /LFLP //Load From Literal Pool
-  /LSSDI // Load/Store Single Data Item
  
 SASMC
- =( SASMC_LSLS
-   /SASMC_LSL
-   /SASMC_LSRS
-   /SASMC_LSR
-   /SASMC_ASRS
-   /SASMC_ASR
-   /SASMC_ADDS
-   /SASMC_ADD
-   /SASMC_SUBS
-   /SASMC_SUB
-   /SASMC_MOVS
-   /SASMC_MOV
-   /SASMC_CMP
-  )
+ =( SASMC_LSLS)
  
-DP
- =(DP_AND
-  /DP_EOR
-  /DP_LSL
-  /DP_LSR
-  /DP_ASR
-  /DP_ADCS
-  /DP_ADC
-  /DP_SBC
-  /DP_ROR
-  /DP_TST
-  /DP_RSBS
-  /DP_NEG
-  /DP_CMP
-  /DP_CMN
-  /DP_ORR
-  /DP_MUL
-  /DP_BIC
-  /DP_MVNS
-  /DP_MVN
- )
- 
-SDIBE
- =(SDIBE_ADD
-  /SDIBE_MOV
-  /SDIBE_MOVS
-  /SDIBE_BX
-  /SDIBE_BLX
- )
- 
-LFLP
- =(LFLP_LDR)
- 
-LSSDI
- =(LSSDI_STR)
 /*--------------SASMC INSTRUCTIONS---------------*/
-SASMC_LSLS=opcode:"LSLS" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
+SASMC_LSLS=opcode:"LSLS"i _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
+		return {op:opcode.toLowerCase(), rd:RD, rm:RM,imm5:Imm,line:line()};
 	}
-	/opcode:"lsls" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
+SASMC_LSRS=opcode:"LSRS"i _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
+		return {op:opcode.toLowerCase(), rd:RD, rm:RM,imm5:Imm,line:line()};
 	}
-
-SASMC_LSL=opcode:"LSL" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
+SASMC_ASRS=opcode:"ASRS"i _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
+		return {op:opcode.toLowerCase(), rd:RD, rm:RM,imm:Imm5,line:line()};
 	}
-	/opcode:"lsl" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
+SASMC_ADDS=opcode:"ADDS"i _ RD:LowRegister _ "," _ RN:LowRegister _ "," _ RM:LowRegister _","_ {
+		return {op:opcode.toLowerCase(), rd:RD, rn:RN,rm:RM,line:line()};
 	}
-SASMC_LSRS=opcode:"LSRS" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
+	/opcode:"ADDS"i _ RD:LowRegister _ "," _ RN:LowRegister _","_ Imm:Imm3 {
+		return {op:opcode.toLowerCase(), rd:RD, rn:RN,imm:Imm3,line:line()};
 	}
-	/opcode:"lsrs" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
+	/opcode:"ADDS"i _ RD:LowRegister _ "," _ Imm:Imm8 {
+		return {op:opcode.toLowerCase(), rd:RD,imm:Imm,line:line()};
 	}
-SASMC_LSR=opcode:"LSR" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
+SASMC_SUBS=opcode:"SUBS"i _ RD:LowRegister _ "," _ RN:LowRegister _ "," _ RM:LowRegister _","_ {
+		return {op:opcode.toLowerCase(), rd:RD, rn:RN,rm:RM,line:line()};
 	}
-	/opcode:"lsr" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
+	/opcode:"SUBS"i _ RD:LowRegister _ "," _ RN:LowRegister _","_ Imm:Imm3 {
+		return {op:opcode.toLowerCase(), rd:RD, rn:RN,imm3:Imm,line:line()}; 
 	}
-	
-SASMC_ASRS=opcode:"ASRS" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
+	/opcode:"SUBS"i _ RD:LowRegister _ "," _ Imm:Imm8 {
+		return {op:opcode.toLowerCase(), rd:RD,imm8:Imm,line:line()};
 	}
-	/opcode:"lsrs" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
+SASMC_MOVS=opcode:"MOVS"i _ RD:LowRegister _ "," _ Imm:Imm8{
+		return {op:opcode.toLowerCase(), rd:RD,imm8:Imm,line:line()}; 
 	}
-	
-SASMC_ASR=opcode:"ASR" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"asr" _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  result.push(Imm)
-	  return result;
-	}
-SASMC_ADDS=opcode:"ADDS" _ RD:LowRegister _ "," _ RN:LowRegister _ "," _ RM:LowRegister _","_ {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"adds" _ RD:LowRegister _ "," _ RN:LowRegister _ "," _ RM:LowRegister _","_{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"ADDS" _ RD:LowRegister _ "," _ RN:LowRegister _","_ Imm:Imm3 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"adds" _ RD:LowRegister _ "," _ RN:LowRegister _","_ Imm:Imm3 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"ADDS" _ RD:LowRegister _ "," _ Imm:Imm8 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"adds" _ RD:LowRegister _ "," _ Imm:Imm8 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-SASMC_ADD=opcode:"ADD" _ RD:LowRegister _ "," _ RN:LowRegister _ "," _ RM:LowRegister{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"add" _ RD:LowRegister _ "," _ RN:LowRegister _ "," _ RM:LowRegister{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"ADD" _ RD:LowRegister _ "," _ RN:LowRegister _","_ Imm:Imm3 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"add" _ RD:LowRegister _ "," _ RN:LowRegister _","_ Imm:Imm3 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"ADD" _ RD:LowRegister _ "," _ Imm:Imm8 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"add" _ RD:LowRegister _ "," _ Imm:Imm8 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-SASMC_SUBS=opcode:"SUBS" _ RD:LowRegister _ "," _ RN:LowRegister _ "," _ RM:LowRegister _","_ {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"subs" _ RD:LowRegister _ "," _ RN:LowRegister _ "," _ RM:LowRegister _","_{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"SUBS" _ RD:LowRegister _ "," _ RN:LowRegister _","_ Imm:Imm3 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"subs" _ RD:LowRegister _ "," _ RN:LowRegister _","_ Imm:Imm3 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"SUBS" _ RD:LowRegister _ "," _ Imm:Imm8 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"subs" _ RD:LowRegister _ "," _ Imm:Imm8 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-SASMC_SUB=opcode:"SUB" _ RD:LowRegister _ "," _ RN:LowRegister _ "," _ RM:LowRegister{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"sub" _ RD:LowRegister _ "," _ RN:LowRegister _ "," _ RM:LowRegister{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"SUB" _ RD:LowRegister _ "," _ RN:LowRegister _","_ Imm:Imm3 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"sub" _ RD:LowRegister _ "," _ RN:LowRegister _","_ Imm:Imm3 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RN)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"SUB" _ RD:LowRegister _ "," _ Imm:Imm8 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"sub" _ RD:LowRegister _ "," _ Imm:Imm8 {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
+SASMC_CMP=opcode:"CMP"i _ RD:LowRegister _ "," _ Imm:Imm8{
+		return {op:opcode.toLowerCase(), rd:RD,imm8:Imm,line:line()};
 	}
 
-SASMC_MOVS=opcode:"MOVS" _ RD:AllRegisters _ "," _ Imm:Imm8{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"movs" _ RD:LowRegister _ "," _ Imm:Imm8{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-SASMC_MOV=opcode:"MOV" _ RD:AllRegisters _ "," _ Imm:Imm8{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"mov" _ RD:LowRegister _ "," _ Imm:Imm8{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-SASMC_CMP=opcode:"CMP" _ RD:LowRegister _ "," _ Imm:Imm8{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}
-	/opcode:"cmp" _ RD:LowRegister _ "," _ Imm:Imm8{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(Imm)
-	  return result;
-	}  
 
-/*---------------------------DATA PROCESSING INSTRUCTIONS---------------------*/
-DP_AND=opcode:"AND" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"and" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	
-DP_EOR=opcode:"EOR" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"eor" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_LSL=opcode:"LSL" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"lsl" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_LSR=opcode:"LSR" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"lsr" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_ASR=opcode:"ASR" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"asr" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_ADCS=opcode:"ADCS" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"adcs" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_ADC=opcode:"ADC" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"adc" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_SBC=opcode:"SBC" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"sbc" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_ROR=opcode:"ROR" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"ror" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_TST=opcode:"TST" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"tst" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_RSBS=opcode:"RSBS" _ RD:LowRegister _ "," _ RM:LowRegister  _ "," _ c:"#0" {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"rsbs" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_NEG=opcode:"NEG" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"neg" _ RD:LowRegister _ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_CMP=opcode:"CMP" _ RD:AllRegisters _ "," _ RM:AllRegisters  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"cmp" _ RD:AllRegisters _ "," _ RM:AllRegisters {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_CMN=opcode:"CMN" _ RD:AllRegisters _ "," _ RM:AllRegisters  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"cmn" _ RD:AllRegisters _ "," _ RM:AllRegisters {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_ORR=opcode:"ORR" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"orr" _ RD:LowRegister	_ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_MUL=opcode:"MUL" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"mul" _ RD:LowRegister	_ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	
-DP_BIC=opcode:"BIC" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"bic" _ RD:LowRegister	_ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-
-DP_MVNS=opcode:"MVNS" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"mvns" _ RD:LowRegister	_ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-DP_MVN=opcode:"MVN" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"mvn" _ RD:LowRegister	_ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-
-/*------------------------------SDIBE INSTRUCCTIONS-----------------------------------*/
-SDIBE_ADD=opcode:"ADD" _ RD:AllRegisters _ "," _ RM:AllRegisters  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"add" _ RD:AllRegisters	_ "," _ RM:AllRegisters {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	
-SDIBE_MOV=opcode:"MOV" _ RD:AllRegisters _ "," _ RM:AllRegisters  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"mov" _ RD:AllRegisters	_ "," _ RM:AllRegisters {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-SDIBE_MOVS=opcode:"MOVS" _ RD:LowRegister _ "," _ RM:LowRegister  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"movs" _ RD:LowRegister	_ "," _ RM:LowRegister {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	
-SDIBE_BX=opcode:"BX" _ RD:AllRegisters _ "," _ RM:AllRegisters  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"bx" _ RD:AllRegisters	_ "," _ RM:AllRegisters {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	
-SDIBE_BLX=opcode:"BLX" _ RD:AllRegisters _ "," _ RM:AllRegisters  {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"blx" _ RD:AllRegisters	_ "," _ RM:AllRegisters {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(RM)
-	  return result;
-	}
-/*---------------------------------------LOAD FROM LITERAL POOL-----------------------*/
-LFLP_LDR=opcode:"LDR" _ RD:LowRegister _ "," _  LBL:Label{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(LBL)
-	  return result;
-	}
-	/opcode:"ldr" _ RD:LowRegister	_ "," _ LBL:Label{
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(LBL)
-	  return result;
-	}
-
-/*-----------------------------------LOAD/STORE SINGLE DATA ITEM-----------------------*/
-LSSDI_STR=opcode:"STR" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"str"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"STR" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Mul4_Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-	/opcode:"str"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Mul4_Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-	/opcode:"STR" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Mul4_Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-	/opcode:"str"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Mul4_Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-LSSDI_STRH=opcode:"STRH" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"strh"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"STRH" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Mul2_Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-	/opcode:"strh"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Mul2_Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-LSSDI_STRB=opcode:"STRB" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"strb"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"STRB" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-	/opcode:"strb"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-	
-LSSDI_LDRSB=opcode:"LDRSB" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"ldrsb"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-
-LSSDI_LDR=opcode:"LDR" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"ldr"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"LDR" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Mul4_Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-	/opcode:"ldr"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Mul4_Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-
-LSSDI_LDRH=opcode:"LDRH" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"ldrh"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"LDRH" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Mul2_Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-	/opcode:"ldrh"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Mul2_Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-LSSDI_LDRB=opcode:"LDRB" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"ldrb"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"LDRB" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-	/opcode:"ldrb"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Imm5 _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(IMM5)
-	  return result;
-	}
-	
-LSSDI_LDRSH=opcode:"LDRSH" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-	/opcode:"ldrsh"  _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  var result=[opcode];
-	  result.push(RT)
-	  result.push(RN)
-	  result.push(RM)
-	  return result;
-	}
-/*----------------------------------------GENERATE PC-RELATIVE ADDRESS----------------*/
-GPCRA_ADR=opcode:"ADR" _ RD:LowRegister _ "," _ LBL:Label {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(LBL)
-	  return result;
-	}
-	/opcode:"adr" _ RD:LowRegister _ "," _ LBL:Label {
-	  var result=[opcode];
-	  result.push(RD)
-	  result.push(LBL)
-	  return result;
-	}
 /*----------------------------------------GENERATE SP-RELATIVE ADDRESS----------------*/
 /*----------------------------------------REGISTERS-----------------------------------*/   
 LowRegister "low register"
- =letter:"r" unit:[0-7]{
+ =letter:"r"i unit:[0-7]{
 	var aux="";
 	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+unit[i];
+		aux=letter[i].toLowerCase()+unit[i];
 	}
 	return aux;
   }
- /letter:"R" unit:[0-7]{
-	var aux="";
-	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+unit[i];
-	}
-	return aux;
- }
  
 HighRegister
- =letter:"r" tenth:[1] unit:[0-2]{
+ =letter:"r"i tenth:[1] unit:[0-2]{
 	var aux="";
 	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+tenth[i]+unit[i];
+		aux=letter[i].toLowerCase()+tenth[i]+unit[i];
 	}
 	return aux;
   }
- /letter:"r" unit:[8-9]{
+ /letter:"r"i unit:[8-9]{
 	var aux="";
 	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+unit[i];
+		aux=letter[i].toLowerCase()+unit[i];
 	}
 	return aux;
   }
-  /letter:"R" tenth:[1] unit:[0-2]{
-	var aux="";
-	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+tenth[i]+unit[i];
-	}
-	return aux;
- }
- /letter:"R" unit:[8-9]{
-	var aux="";
-	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+unit[i];
-	}
-	return aux;
- }
  
 AllRegisters
- =letter:"r" tenth:[1] unit:[0-2]{
+ =letter:"r"i tenth:[1] unit:[0-2]{
 	var aux="";
 	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+tenth[i]+unit[i];
+		aux=letter[i].toLowerCase()+tenth[i]+unit[i];
 	}
 	return aux;
   }
- /letter:"r" unit:[0-9]{
+ /letter:"r"i unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+unit[i];
+		aux=letter[i].toLowerCase()+unit[i];
 	}
 	return aux;
   }
-  /letter:"R" tenth:[1] unit:[0-2]{
-	var aux="";
-	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+tenth[i]+unit[i];
-	}
-	return aux;
- }
- /letter:"R"unit:[0-9]{
-	var aux="";
-	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+unit[i];
-	}
-	return aux;
- }
+  
  
 SP
- =letter:"R" tenth:[1] unit:[3]{
+ =letter:"r"i tenth:[1] unit:[3]{
 	var aux="";
 	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+tenth[i]+unit[i];
+		aux=letter[i].toLowerCase()+tenth[i]+unit[i];
 	}
 	return aux;
   }
- /letter:"r" tenth:[1] unit:[3]{
-	var aux="";
-	for (var i = 0; i < letter.length; i++) {
-		aux=letter[i]+tenth[i]+unit[i];
-	}
-	return aux;
-  }
- /letter:"SP"{
-	return letter;
-  }
- /letter:"sp"{
-	return letter;
+ /letter:"sp"i{
+	return letter.toLowerCase();
   }
 
   /*---------------------------------IMMEDIATES-----------------------------------*/
@@ -1057,7 +172,7 @@ SP
  =hashtag:"#" unit:[0-7]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+unit[i];
+		aux=unit[i];
 	}
 	return aux;
  }
@@ -1066,21 +181,21 @@ SP
  =hashtag:"#" tenth:[3] unit:[0-1]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+tenth[i]+unit[i];
+		aux=tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" tenth:[1-2] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+tenth[i]+unit[i];
+		aux=tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+unit[i];
+		aux=unit[i];
 	}
 	return aux;
  }
@@ -1089,28 +204,28 @@ Mul4_Imm5
  =hashtag:"#" hundredth:[1] tenth:[2] unit:[0-4]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+hundredth[i]+tenth[i]+unit[i];
+		aux=hundredth[i]+tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" hundredth:[1] tenth:[0-1] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+hundredth[i]+tenth[i]+unit[i];
+		aux=hundredth[i]+tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" tenth:[1-9] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+tenth[i]+unit[i];
+		aux=tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+unit[i];
+		aux=unit[i];
 	}
 	return aux;
  }
@@ -1119,21 +234,21 @@ Mul2_Imm5
  =hashtag:"#" tenth:[6] unit:[0-2]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+tenth[i]+unit[i];
+		aux=tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" tenth:[1-5] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+tenth[i]+unit[i];
+		aux=tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+unit[i];
+		aux=unit[i];
 	}
 	return aux;
  }
@@ -1142,28 +257,28 @@ Imm7 "out of range"
  =hashtag:"#" hundredth:[5] tenth:[0] unit:[0-8]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+hundredth[i]+tenth[i]+unit[i];
+		aux=hundredth[i]+tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" hundredth:[1-4] tenth:[0-9] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+hundredth[i]+tenth[i]+unit[i];
+		aux=hundredth[i]+tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" tenth:[1-9] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+tenth[i]+unit[i];
+		aux=tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+unit[i];
+		aux=unit[i];
 	}
 	return aux;
  }
@@ -1173,35 +288,35 @@ Imm7 "out of range"
  =hashtag:"#" hundredth:[2] tenth:[5] unit:[0-5]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+hundredth[i]+tenth[i]+unit[i];
+		aux=hundredth[i]+tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" hundredth:[2] tenth:[0-4] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+hundredth[i]+tenth[i]+unit[i];
+		aux=hundredth[i]+tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" hundredth:[1] tenth:[0-9] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+hundredth[i]+tenth[i]+unit[i];
+		aux=hundredth[i]+tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" tenth:[1-9] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+tenth[i]+unit[i];
+		aux=tenth[i]+unit[i];
 	}
 	return aux;
  }
  /hashtag:"#" unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
-		aux=hashtag[i]+unit[i];
+		aux=unit[i];
 	}
 	return aux;
  }
