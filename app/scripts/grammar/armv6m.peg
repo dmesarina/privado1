@@ -70,11 +70,67 @@ SourceElement
   =Statement 
   
 Statement "instruction"
- =SASMC //Shift, Subtract, Move, Compare
+ =SASMC     //Shift, Subtract, Move, Compare
+ /DP        //Data Processing
+ /LFLP      //Load From Literal Pool
+ /LSSDI     // Load/Store Single Data Item
+ /GSPRA     //Generate SP-Relative Address
+ /GPCRA     //Generate PC-Relative Address
  
 SASMC
- =( SASMC_LSLS)
+ =( SASMC_LSLS
+   /SASMC_LSRS
+   /SASMC_ASRS
+   /SASMC_ADDS
+   /SASMC_SUBS
+   /SASMC_MOVS
+   /SASMC_CMP
+  )
  
+ DP
+ =(DP_ANDS
+  /DP_EORS
+  /DP_LSLS
+  /DP_LSRS
+  /DP_ASRS
+  /DP_ADCS
+  /DP_SBCS
+  /DP_RORS
+  /DP_TST
+  /DP_RSBS
+  /DP_CMP
+  /DP_ORRS
+  /DP_MULS
+  /DP_BICS
+  /DP_MVNS
+ )
+ 
+ SDIBE
+ =(SDIBE_ADD
+  /SDIBE_MOV
+  /SDIBE_BX
+  /SDIBE_BLX
+ )
+ 
+LFLP
+ =(LFLP_LDR)
+ 
+LSSDI
+ =(LSSDI_STR
+  /LSSDI_STRH
+  /LSSDI_STRB
+  /LSSDI_LDRSB
+  /LSSDI_LDR
+  /LSSDI_LDRH
+  /LSSDI_LDRB
+  /LSSDI_LDRSH
+ )
+
+GPCRA
+ =(GPCRA_ADR)
+
+GSPRA
+ =(GSPRA_ADD)
 /*--------------SASMC INSTRUCTIONS---------------*/
 SASMC_LSLS=opcode:"LSLS"i _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
 		return {op:opcode.toLowerCase(), rd:RD, rm:RM,imm5:Imm,line:line()};
@@ -109,9 +165,247 @@ SASMC_MOVS=opcode:"MOVS"i _ RD:LowRegister _ "," _ Imm:Imm8{
 SASMC_CMP=opcode:"CMP"i _ RD:LowRegister _ "," _ Imm:Imm8{
 		return {op:opcode.toLowerCase(), rd:RD,imm8:Imm,line:line()};
 	}
+/*---------------------------DATA PROCESSING INSTRUCTIONS---------------------*/
+DP_ANDS=opcode:"ANDS"i _ RDN:LowRegister _ "," _ RM:LowRegister  {
+      return {op:opcode.toLowerCase(), rdn:RDN, rm:RM,line:line()};
+	}
+DP_EORS=opcode:"EORS"i _ RDN:LowRegister _ "," _ RM:LowRegister {
+	  return {op:opcode.toLowerCase(), rdn:RDN, rm:RM,line:line()};
+	}
 
-
-/*----------------------------------------GENERATE SP-RELATIVE ADDRESS----------------*/
+DP_LSLS=opcode:"LSLS"i _ RDN:LowRegister _ "," _ RM:LowRegister {
+	  return {op:opcode.toLowerCase(), rdn:RDN, rm:RM,line:line()};
+	}
+DP_LSRS=opcode:"LSRS"i _ RDN:LowRegister _ "," _ RM:LowRegister  {
+	  return {op:opcode.toLowerCase(), rdn:RDN, rm:RM,line:line()};
+	}
+DP_ASRS=opcode:"ASRS"i _ RDN:LowRegister _ "," _ RM:LowRegister {
+	  return {op:opcode.toLowerCase(), rdn:RDN, rm:RM,line:line()};
+	}
+DP_ADCS=opcode:"ADCS"i _ RDN:LowRegister _ "," _ RM:LowRegister  _ "," _ Shift:SO { 
+	  return {op:opcode.toLowerCase(), rdn:RDN, rm:RM,shift:Shift,line:line()};
+    }
+    /opcode:"ADCS"i _ RDN:LowRegister _ "," _ RM:LowRegister  {
+	  return {op:opcode.toLowerCase(), rdn:RDN, rm:RM,line:line()};
+	}
+DP_SBCS=opcode:"SBCS"i _ RDN:LowRegister _ "," _ RM:LowRegister  {
+	  return {op:opcode.toLowerCase(), rdn:RDN, rm:RM,line:line()};
+	}
+DP_RORS=opcode:"RORS"i _ RDN:LowRegister _ "," _ RM:LowRegister  {
+	  return {op:opcode.toLowerCase(), rdn:RDN, rm:RM,line:line()};
+	}
+DP_TST=opcode:"TST"i _ RN:LowRegister _ "," _ RM:LowRegister  {
+	  return {op:opcode.toLowerCase(), rn:RN, rm:RM,line:line()};
+	}
+DP_RSBS=opcode:"RSBS"i _ RD:LowRegister _ "," _ RN:LowRegister  _ "," _ c:"#0" {
+	  return {op:opcode.toLowerCase(), rd:RD, rn:RN,line:line()};
+	}
+DP_CMP= opcode:"CMP"i _ RN:HighRegister _ "," _ RM:HighRegister {
+     if(RN ==="r15" && RM==="r15"){
+          error(
+           "Both registers can not be R15 (PC)."
+          );
+      }else{
+        return {op:opcode.toLowerCase(), rn:RN,rm:RM,line:line()};
+      }
+    }
+    /opcode:"CMP"i _ RN:HighRegister _ "," _ RM:LowRegister  {
+	  return {op:opcode.toLowerCase(), rn:RN,rm:RM,line:line()};
+	}
+    /opcode:"CMP"i _ RN:LowRegister _ "," _ RM:HighRegister  {
+	  return {op:opcode.toLowerCase(), rn:RN,rm:RM,line:line()};
+	}
+    /opcode:"CMP"i _ RN:LowRegister _ "," _ RM:LowRegister  {
+	  return {op:opcode.toLowerCase(), rn:RN,rm:RM,line:line()};
+	}
+DP_CMN=opcode:"CMN"i _ RN:LowRegister _ "," _ RM:LowRegister  {
+	  return {op:opcode.toLowerCase(), rn:RN,rm:RM,line:line()};
+	}
+DP_ORRS=opcode:"ORRS"i _ RDN:LowRegister _ "," _ RM:LowRegister  {
+	  return {op:opcode.toLowerCase(), rdn:RDN,rm:RM,line:line()};
+	}
+DP_MULS=opcode:"MULS"i _ RDM:LowRegister _ "," _ RN:LowRegister _ "," _ RDM2:LowRegister {
+	  return {op:opcode.toLowerCase(), rdm:RDM,rn:RN,rdm:RDM2,line:line()};
+	}
+DP_BICS=opcode:"BICS"i _ RDN:LowRegister _ "," _ RM:LowRegister  {
+	  return {op:opcode.toLowerCase(), rdn:RDN,rm:RM,line:line()};
+	}
+DP_MVNS=opcode:"MVNS"i _ RD:LowRegister _ "," _ RM:LowRegister  {
+	  return {op:opcode.toLowerCase(), rd:RD,rm:RM,line:line()};
+	}
+/*------------------------------SDIBE INSTRUCCTIONS-----------------------------------*/
+SDIBE_ADD=opcode:"ADD"i _ RDN:AllRegisters _ "," _ RM:AllRegisters  {
+	 if(RDN ==="r15" && RM==="r15"){
+          error(
+           "Both registers can not be R15 (PC)."
+          );
+      }else{
+        return {op:opcode.toLowerCase(), rn:RN,rm:RM,line:line()};
+      }
+    }
+SDIBE_MOV=opcode:"MOV"i _ RD:AllRegisters _ "," _ RM:AllRegisters  {  
+      return {op:opcode.toLowerCase(), rd:RD,rm:RM,line:line()};
+    }
+SDIBE_BX=opcode:"BX"i _ RM:AllRegisters{
+      return {op:opcode.toLowerCase(), rm:RM,line:line()};
+	}
+SDIBE_BLX=opcode:"BLX"i _ RM:AllRegisters{
+      return {op:opcode.toLowerCase(), rm:RM,line:line()};
+	}
+/*---------------------------------------LOAD FROM LITERAL POOL-----------------------*/
+LFLP_LDR=opcode:"LDR"i _ RT:LowRegister _ "," _  LBL:Label{
+	  return {op:opcode.toLowerCase(), rt:RT,label:LBL,line:line()};
+	}
+/*-----------------------------------LOAD/STORE SINGLE DATA ITEM-----------------------*/
+LSSDI_STR=opcode:"STR"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
+     
+	  return {op:opcode.toLowerCase(), rt:RT, rn:RN, rm:RM,line:line()};
+	}
+    /opcode:"STR"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "{," _ IMM5:Mul4_Imm5 _ "}" _ "]"{
+      if(IMM5%4===0){
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:IMM5,line:line()}; 
+      }else{
+        error("Immediate has to be a multiple of 4.");
+      }
+	}
+    /opcode:"STR"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "]"{
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:0,line:line()}; 
+	}
+    /opcode:"STR"i _ RT:LowRegister _ "," _  "[" _  RN:SP _ "," _ IMM8:Mul4_Imm8 _ "]"{
+      if(IMM8%4===0){
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm8:IMM8,line:line()}; 
+      }else{
+        error("Immediate has to be a multiple of 4.");
+      }
+	}
+    /opcode:"STR"i _ RT:LowRegister _ "," _  "[" _  RN:SP _ "]"{
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm8:0,line:line()}; 
+	}
+LSSDI_STRH=opcode:"STRH"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
+	  return {op:opcode.toLowerCase(), rt:RT, rn:RN, rm:RM,line:line()};
+	}
+    /opcode:"STRH"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "{," _ IMM5:Mul2_Imm5 _ "}" _ "]"{
+      if(IMM5%2===0){
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:IMM5,line:line()}; 
+      }else{
+        error("Immediate has to be a multiple of 2.");
+      }
+	}
+    /opcode:"STRH"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "]"{
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:0,line:line()}; 
+	}
+LSSDI_STRB=opcode:"STRB"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
+	  return {op:opcode.toLowerCase(), rt:RT, rn:RN, rm:RM,line:line()};
+	}
+    /opcode:"STRB"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ IMM5:Imm5 _ "]"{
+	  return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:IMM5,line:line()}; 
+	}
+    /opcode:"STRB"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "]"{
+	  return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:0,line:line()}; 
+	}
+LSSDI_LDRSB=opcode:"LDRSB"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
+	  return {op:opcode.toLowerCase(), rt:RT, rn:RN, rm:RM,line:line()};
+	}
+LSSDI_LDR=opcode:"LDR"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
+	  return {op:opcode.toLowerCase(), rt:RT, rn:RN, rm:RM,line:line()};
+	}
+    /opcode:"LDR"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "{," _ IMM5:Mul4_Imm5 _ "}" _ "]"{
+    if(IMM5%4===0){
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:IMM5,line:line()}; 
+      }else{
+        error("Immediate has to be a multiple of 4.");
+      }
+	}
+    /opcode:"LDR"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "]"{
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:0,line:line()}; 
+	}
+    /opcode:"LDR"i _ RT:LowRegister _ "," _  "[" _  RN:SP _ "{," _ IMM8:Mul4_Imm8 _ "}" _ "]"{
+      if(IMM8%4===0){
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm8:IMM8,line:line()}; 
+      }else{
+        error("Immediate has to be a multiple of 4.");
+      }
+	}
+    /opcode:"LDR"i _ RT:LowRegister _ "," _  "[" _  RN:SP _ "]"{
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm8:0,line:line()}; 
+	}
+LSSDI_LDRH=opcode:"LDRH"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
+	  return {op:opcode.toLowerCase(), rt:RT, rn:RN, rm:RM,line:line()};
+	}
+    /opcode:"LDRH"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "{," _ IMM5:Mul2_Imm5 _ "}" _ "]"{
+      if(IMM5%2===0){
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:IMM5,line:line()}; 
+      }else{
+        error("Immediate has to be a multiple of 2.");
+      }
+	}
+    /opcode:"LDRH"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "]"{
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:0,line:line()}; 
+	}
+LSSDI_LDRB=opcode:"LDRB"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
+	  return {op:opcode.toLowerCase(), rt:RT, rn:RN, rm:RM,line:line()};
+	}
+    /opcode:"LDRB"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "{," _ IMM5:Imm5 _ "}" _ "]"{
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:IMM5,line:line()}; 
+	}
+    /opcode:"LDRB"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "]"{
+         return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:0,line:line()}; 
+	}
+LSSDI_LDRSH=opcode:"LDRSH" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
+	  return {op:opcode.toLowerCase(), rt:RT, rn:RN, rm:RM,line:line()};
+	}
+    
+/*--------------------------------------GPCRA INSTRUCTIONS------------------------------*/
+GPCRA_ADR=opcode:"ADR"i _ RD:LowRegister _ "," _  LBL:Label{
+	  return {op:opcode.toLowerCase(), rd:RD, label:LBL,line:line()};
+	}
+/*--------------------------------------GSPRA INSTRUCTIONS------------------------------*/
+GSPRA_ADD=opcode:"ADD"i _ RD:LowRegister _ "," _  IMM8:Mul4_Imm8{
+	  if(IMM8%4===0){
+         return {op:opcode.toLowerCase(), rd:RD,imm8:IMM8,line:line()}; 
+      }else{
+        error("Immediate has to be a multiple of 4.");
+      }
+	}
+    /opcode:"ADD"i _  IMM8:Mul4_Imm8{
+	  if(IMM8%4===0){
+         return {op:opcode.toLowerCase(), rd:"r13",imm8:IMM8,line:line()}; 
+      }else{
+        error("Immediate has to be a multiple of 4.");
+      }
+	}
+/*----------------------------------------SHIFTED OPERAND------------------------------*/
+SO
+ =( SO_LSL
+   /SO_LSR
+   /SO_ASR
+   /SO_ROR
+  )
+  
+SO_LSL=Type:"LSL"i _ imm:Imm5 { 
+	  return {type:Type.toLowerCase(), imm:imm};
+    }
+    /Type:"LSL"i _ reg:LowRegister { 
+	  return {type:Type.toLowerCase(), reg:reg};
+    }
+SO_LSR=Type:"LSR"i _ imm:Imm5 { 
+	  return {type:Type.toLowerCase(), imm:imm};
+    }
+    /Type:"LSR"i _ reg:LowRegister { 
+	  return {type:Type.toLowerCase(), reg:reg};
+    }
+SO_ASR=Type:"ASR"i _ imm:Imm5 { 
+	  return {type:Type.toLowerCase(), imm:imm};
+    }
+    /Type:"ASR"i _ reg:LowRegister { 
+	  return {type:Type.toLowerCase(), reg:reg};
+    }
+SO_ROR=Type:"ROR"i _ imm:Imm5 { 
+	  return {type:Type.toLowerCase(), imm:imm};
+    }
+    /Type:"ROR"i _ reg:LowRegister { 
+	  return {type:Type.toLowerCase(), reg:reg};
+    }
 /*----------------------------------------REGISTERS-----------------------------------*/   
 LowRegister "low register"
  =letter:"r"i unit:[0-7]{
@@ -139,7 +433,7 @@ HighRegister
   }
  
 AllRegisters
- =letter:"r"i tenth:[1] unit:[0-2]{
+ =letter:"r"i tenth:[1] unit:[0-5]{
 	var aux="";
 	for (var i = 0; i < letter.length; i++) {
 		aux=letter[i].toLowerCase()+tenth[i]+unit[i];
@@ -164,7 +458,7 @@ SP
 	return aux;
   }
  /letter:"sp"i{
-	return letter.toLowerCase();
+	return "r13";
   }
 
   /*---------------------------------IMMEDIATES-----------------------------------*/
@@ -174,7 +468,7 @@ SP
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  
  Imm5 "out of range"
@@ -183,7 +477,7 @@ SP
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" tenth:[1-2] unit:[0-9]{
 	var aux="";
@@ -197,7 +491,7 @@ SP
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  
 Mul4_Imm5
@@ -206,28 +500,28 @@ Mul4_Imm5
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=hundredth[i]+tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" hundredth:[1] tenth:[0-1] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=hundredth[i]+tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" tenth:[1-9] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
 
 Mul2_Imm5
@@ -236,21 +530,21 @@ Mul2_Imm5
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" tenth:[1-5] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  
 Imm7 "out of range"
@@ -259,28 +553,28 @@ Imm7 "out of range"
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=hundredth[i]+tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" hundredth:[1-4] tenth:[0-9] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=hundredth[i]+tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" tenth:[1-9] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  
  
@@ -290,35 +584,72 @@ Imm7 "out of range"
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=hundredth[i]+tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" hundredth:[2] tenth:[0-4] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=hundredth[i]+tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" hundredth:[1] tenth:[0-9] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=hundredth[i]+tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" tenth:[1-9] unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" unit:[0-9]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
+ }
+ 
+Mul4_Imm8 "out of range"
+ =hashtag:"#" thousand:[1] hundredth:[0] tenth:[2] unit:[0]{
+	var aux="";
+	for (var i = 0; i < hashtag.length; i++) {
+		aux=hundredth[i]+tenth[i]+unit[i];
+	}
+	return parseInt(aux,10);
+ }
+ /hashtag:"#" thousand:[1] hundredth:[0] tenth:[0-1] unit:[0-9]{
+	var aux="";
+	for (var i = 0; i < hashtag.length; i++) {
+		aux=hundredth[i]+tenth[i]+unit[i];
+	}
+	return parseInt(aux,10);
+ }
+ /hashtag:"#" hundredth:[1-9] tenth:[0-9] unit:[0-9]{
+	var aux="";
+	for (var i = 0; i < hashtag.length; i++) {
+		aux=hundredth[i]+tenth[i]+unit[i];
+	}
+	return parseInt(aux,10);
+ }
+ /hashtag:"#" tenth:[1-9] unit:[0-9]{
+	var aux="";
+	for (var i = 0; i < hashtag.length; i++) {
+		aux=tenth[i]+unit[i];
+	}
+	return parseInt(aux,10);
+ }
+ /hashtag:"#" unit:[0-9]{
+	var aux="";
+	for (var i = 0; i < hashtag.length; i++) {
+		aux=unit[i];
+	}
+	return parseInt(aux,10);
  }
 /*----------------------------OTHERS-------------------------*/
 Label
