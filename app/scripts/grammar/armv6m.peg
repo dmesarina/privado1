@@ -76,6 +76,7 @@ Statement "instruction"
  /LSSDI     // Load/Store Single Data Item
  /GSPRA     //Generate SP-Relative Address
  /GPCRA     //Generate PC-Relative Address
+ /MISCE     //Miscellaneous
  
 SASMC
  =( SASMC_LSLS
@@ -131,6 +132,22 @@ GPCRA
 
 GSPRA
  =(GSPRA_ADD)
+ 
+ MISCE
+ =(MISCE_ADD
+  /MISCE_SUB
+  /MISCE_SXTH
+  /MISCE_SXTB
+  /MISCE_UXTH
+  /MISCE_UXTB
+  /MISCE_PUSH
+  /MISCE_CPS
+  /MISCE_REVSH
+  /MISCE_REV16
+  /MISCE_REV
+  /MISCE_POP
+  /MISCE_BKPT
+)
 /*--------------SASMC INSTRUCTIONS---------------*/
 SASMC_LSLS=opcode:"LSLS"i _ RD:LowRegister _ "," _ RM:LowRegister _","_ Imm:Imm5 {
 		return {op:opcode.toLowerCase(), rd:RD, rm:RM,imm5:Imm,line:line()};
@@ -352,7 +369,7 @@ LSSDI_LDRB=opcode:"LDRB"i _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," 
          return {op:opcode.toLowerCase(), rt:RT, rn:RN,imm5:0,line:line()}; 
 	}
 LSSDI_LDRSH=opcode:"LDRSH" _ RT:LowRegister _ "," _  "[" _  RN:LowRegister _ "," _ RM:LowRegister _ "]"{
-	  return {op:opcode.toLowerCase(), rt:RT, rn:RN, rm:RM,line:line()};
+  	  return {op:opcode.toLowerCase(), rt:RT, rn:RN, rm:RM,line:line()};
 	}
     
 /*--------------------------------------GPCRA INSTRUCTIONS------------------------------*/
@@ -374,6 +391,76 @@ GSPRA_ADD=opcode:"ADD"i _ RD:LowRegister _ "," _  IMM8:Mul4_Imm8{
         error("Immediate has to be a multiple of 4.");
       }
 	}
+/*--------------------------------MISCELLANEOUS INSTRUCTIONS--------------------------*/
+MISCE_ADD=opcode:"ADD"i _ SP1:SP _ "," _ SP2:SP _ "," _  IMM7:Mul4_Imm7{
+	  if(IMM7%4===0){
+         return {op:opcode.toLowerCase(), sp:SP1,sp:SP2,imm7:IMM7,line:line()}; 
+      }else{
+        error("Immediate has to be a multiple of 4.");
+      }
+	}
+MISCE_SUB=opcode:"SUB"i _ SP1:SP _ "," _ SP2:SP _ "," _  IMM7:Mul4_Imm7{
+	  if(IMM7%4===0){
+         return {op:opcode.toLowerCase(), sp:SP1,sp:SP2,imm7:IMM7,line:line()}; 
+      }else{
+        error("Immediate has to be a multiple of 4.");
+      }
+	}
+MISCE_SXTH=opcode:"SXTH"i _ RD:LowRegister _ "," _ RM:LowRegister  {  
+      return {op:opcode.toLowerCase(), rd:RD,rm:RM,line:line()};
+    }
+MISCE_SXTB=opcode:"SXTB"i _ RD:LowRegister _ "," _ RM:LowRegister  {  
+      return {op:opcode.toLowerCase(), rd:RD,rm:RM,line:line()};
+    }
+MISCE_UXTH=opcode:"UXTH"i _ RD:LowRegister _ "," _ RM:LowRegister  {  
+      return {op:opcode.toLowerCase(), rd:RD,rm:RM,line:line()};
+    }
+MISCE_UXTB=opcode:"UXTB"i _ RD:LowRegister _ "," _ RM:LowRegister  {  
+      return {op:opcode.toLowerCase(), rd:RD,rm:RM,line:line()};
+    }
+MISCE_PUSH=opcode:"PUSH"i _ "{" _ REGISTERS:(( _ (LR/LowRegister) _ "," )* _ LowRegister) _ "}"  { 
+      var reg=[];
+      if(REGISTERS.length >=2){
+          for (var i = 0; i < REGISTERS[0].length; i++) {
+            reg.push(REGISTERS[0][i][1]);
+          } 
+      }
+      for (var i = 1; i < REGISTERS.length; i++) {
+        if(REGISTERS[i].indexOf("r")!=-1){
+            reg.push(REGISTERS[i]);
+        }
+      } 
+      return {op:opcode.toLowerCase(), registers:reg ,line:line()};
+    }
+MISCE_CPS=opcode:("CPSIE"i/"CPSID"i) _ IMM1:[0-1] {  
+      return {op:opcode.toLowerCase(), i:parseInt(IMM1,10),line:line()};
+    }
+MISCE_REVSH=opcode:"REVSH"i _ RD:LowRegister _ "," _ RM:LowRegister  {  
+      return {op:opcode.toLowerCase(), rd:RD,rm:RM,line:line()};
+    }
+MISCE_REV16=opcode:"REV16"i _ RD:LowRegister _ "," _ RM:LowRegister  {  
+      return {op:opcode.toLowerCase(), rd:RD,rm:RM,line:line()};
+    }
+MISCE_REV=opcode:"REV"i _ RD:LowRegister _ "," _ RM:LowRegister  {  
+      return {op:opcode.toLowerCase(), rd:RD,rm:RM,line:line()};
+    }
+MISCE_POP=opcode:"POP"i _ "{" _ REGISTERS:(( _ (PC/LowRegister) _ "," )* _ LowRegister) _ "}"  { 
+      var reg=[];
+      if(REGISTERS.length >=2){
+          for (var i = 0; i < REGISTERS[0].length; i++) {
+            reg.push(REGISTERS[0][i][1]);
+          } 
+      }
+      for (var i = 1; i < REGISTERS.length; i++) {
+        if(REGISTERS[i].indexOf("r")!=-1){
+            reg.push(REGISTERS[i]);
+        }
+      } 
+      return {op:opcode.toLowerCase(), registers:reg ,line:line()};
+    }
+MISCE_BKPT=opcode:"BKPT"i _ IMM8:Imm8  {  
+      return {op:opcode.toLowerCase(), imm8:IMM8 ,line:line()};
+    }
 /*----------------------------------------SHIFTED OPERAND------------------------------*/
 SO
  =( SO_LSL
@@ -406,6 +493,7 @@ SO_ROR=Type:"ROR"i _ imm:Imm5 {
     /Type:"ROR"i _ reg:LowRegister { 
 	  return {type:Type.toLowerCase(), reg:reg};
     }
+
 /*----------------------------------------REGISTERS-----------------------------------*/   
 LowRegister "low register"
  =letter:"r"i unit:[0-7]{
@@ -461,7 +549,32 @@ SP
 	return "r13";
   }
 
+LR
+ =letter:"r"i tenth:[1] unit:[4]{
+	var aux="";
+	for (var i = 0; i < letter.length; i++) {
+		aux=letter[i].toLowerCase()+tenth[i]+unit[i];
+	}
+	return aux;
+  }
+ /letter:"LR"i{
+	return "r14";
+  }
+  
+PC
+ =letter:"r"i tenth:[1] unit:[5]{
+	var aux="";
+	for (var i = 0; i < letter.length; i++) {
+		aux=letter[i].toLowerCase()+tenth[i]+unit[i];
+	}
+	return aux;
+  }
+ /letter:"PC"i{
+	return "r15";
+  }
   /*---------------------------------IMMEDIATES-----------------------------------*/
+
+ 
  Imm3 "out of range"
  =hashtag:"#" unit:[0-7]{
 	var aux="";
@@ -484,7 +597,7 @@ SP
 	for (var i = 0; i < hashtag.length; i++) {
 		aux=tenth[i]+unit[i];
 	}
-	return aux;
+	return parseInt(aux,10);
  }
  /hashtag:"#" unit:[0-9]{
 	var aux="";
@@ -547,7 +660,7 @@ Mul2_Imm5
 	return parseInt(aux,10);
  }
  
-Imm7 "out of range"
+Mul4_Imm7 "out of range"
  =hashtag:"#" hundredth:[5] tenth:[0] unit:[0-8]{
 	var aux="";
 	for (var i = 0; i < hashtag.length; i++) {
